@@ -1,0 +1,30 @@
+.keyboard {
+  margin: 10px;
+}
+
+.row {
+  display: flex;
+  margin:0 auto 5px;
+  line-height:50px;
+}
+
+.box {
+  background:#444;
+  color:#fff;
+  margin:0 5px 0 0; 
+  text-align: center;
+  cursor: pointer;
+}
+
+.box:active {
+  transform: translateY(1px);
+  background: #333;
+  box-shadow: 0 1px 0 #000;
+}
+
+.one { flex: 1; }
+.one-half { flex: 1.5; }
+.two { flex: 2; }
+.two-half { flex: 2.5; }
+.three { flex: 3; }
+.five { flex: 5; }
