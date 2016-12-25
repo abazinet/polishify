@@ -7,58 +7,98 @@ const polishLetters = [
   'T', 't', 'U', 'u', 'W', 'w', 'Y', 'y', 'Z', 'z', 
   'Ź', 'ź', 'Ż', 'ż'];
 
+const range = (length, start) => {
+  return [...Array(length).keys()].map(i => i + (start || 0));
+}
+
 class TextReader {
   constructor(text) {
-    this.text = text;
-    this.position = 0;
+    this.text = Array.isArray(text) ? text : text.split('');
+    this.position = -1;
+  }
+
+  nextChunk(length) {
+    return [...Array(length)].map(() => this.next());
+  }
+  
+  previousChunk(length) {
+    return [...Array(length)].map(() => this.previous()).reverse();
   }
 
   next() {
+    this.position++;
     if (this.position === this.text.length) {
-      this.position = -1;
+      this.position = 0;
     }
-    return this.text.charAt(this.position++);
+
+    return this.text[this.position];
   }
 
   previous() {
-    if (this.position === 0) {
-      this.position = this.text.length;
+    this.position--;
+    if (this.position === -1) {
+      this.position = this.text.length - 1;
     }
-    return this.text.charAt(this.position--);
+
+    return this.text[this.position];
+  }
+  
+  currentPosition() {
+    return this.position;
   }
 }
 
 class TextSample extends React.Component {
   constructor(props) {
     super(props);
+    this.text = new TextReader(props.text);
     this.lettersInRow = 10;
     this.rowsInText = 3;
-    this.text = new TextReader(props.sample);
+
+    this.state = {
+      blinking: false,
+      sample: new TextReader(this.text.nextChunk(this.lettersInRow * this.rowsInText)),
+      cursorPosition: 0
+    };
   }
 
-  componentWillReceiveProps(nextProps) {
-    this.text = new TextReader(this.props.sample);
+  playAudio(letter) {
+    const synth = window.speechSynthesis;
+    const speech = new SpeechSynthesisUtterance(letter);
+    speech.lang = 'pl-PL';
+    synth.speak(speech);
   }
   
-  playAudio(letter) {
-    const utterance = new SpeechSynthesisUtterance(letter);
-    utterance.lang = 'pl-PL';
-    const synth = window.speechSynthesis;
-    synth.speak(utterance);
-  }
+  blink() {
+		this.setState({ blinking: !this.state.blinking });
+		setTimeout(this.blink.bind(this), 700);
+	}
+
+	componentDidMount () {
+		this.blink();
+	}
 
   renderLetter(index, letter) {
-    return <div key={ index } className="letter one" onClick={ this.playAudio.bind(this, letter) }>{ letter }</div>;
+    const blinkingClass = (index === this.state.cursorPosition && this.state.blinking) ? 'blinking' : '';
+    const className = `letter one ${blinkingClass} ${index}`;
+
+    return <div key={ index } className={ className } onClick={ this.playAudio.bind(this, letter) }>{ letter }</div>;
   }
 
   renderRow() {
-    const row = [...Array(this.lettersInRow)].map(i => this.renderLetter(i, this.text.next()));
+    const row = range(this.lettersInRow).map(() => {
+      const sample = this.state.sample;
+      const letter = sample.next();
+      const position = sample.currentPosition();
+
+      return this.renderLetter(position, letter)
+    });
+
     return <div className="row">{ row }</div>;
   }
 
   render() {
-    const sample = this.props.sample.split('');
-    const rows = [...Array(this.rowsInText)].map(() => this.renderRow(sample));
+    const rows = range(this.rowsInText).map(() => this.renderRow(this.state.sample));
     return <div>
       { rows }
     </div>;
@@ -110,7 +150,7 @@ class Container extends React.Component {
   
   render() {
     return <div>
-      <TextSample sample="Błona biologiczna może odkładać się na granicy faz niezależnie od ich rodzaju."/>
+      <TextSample text="Błona biologiczna może odkładać się na granicy faz niezależnie od ich rodzaju."/>
       <Keyboard/>
     </div>
   }

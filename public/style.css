@@ -28,7 +28,10 @@
   margin:0 5px 0 0; 
   text-align: center;
   cursor: pointer;
-  
+}
+
+.blinking {
+  background: #999;
 }
 
 .one { flex: 1; }
