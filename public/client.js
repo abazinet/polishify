@@ -28,12 +28,6 @@ class TextReader {
   }
 }
 
-class AudioPlayer extends React.Component {
-  reunder() {
-    return <audio src="{ this.props.audioSrc }" controls autoplay/>;
-  }
-}
-
 class TextSample extends React.Component {
   constructor(props) {
     super(props);
@@ -45,9 +39,16 @@ class TextSample extends React.Component {
   componentWillReceiveProps(nextProps) {
     this.text = new TextReader(this.props.sample);
   }
+  
+  playAudio(letter) {
+    const utterance = new SpeechSynthesisUtterance(letter);
+    utterance.lang = 'pl-PL';
+    const synth = window.speechSynthesis;
+    synth.speak(utterance);
+  }
 
   renderLetter(index, letter) {
-    return <div key={ index } className="letter one">{ letter }</div>;
+    return <div key={ index } className="letter one" onClick={ this.playAudio.bind(this, letter) }>{ letter }</div>;
   }
 
   renderRow() {
@@ -58,7 +59,9 @@ class TextSample extends React.Component {
   render() {
     const sample = this.props.sample.split('');
     const rows = [...Array(this.rowsInText)].map(() => this.renderRow(sample));
-    return <div>{ rows }</div>;
+    return <div>
+      { rows }
+    </div>;
   }
 }
 
@@ -107,7 +110,7 @@ class Container extends React.Component {
   
   render() {
     return <div>
-      <TextSample sample="This is just a test with a number of letters"/>
+      <TextSample sample="Błona biologiczna może odkładać się na granicy faz niezależnie od ich rodzaju."/>
       <Keyboard/>
     </div>
   }
