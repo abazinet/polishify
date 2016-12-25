@@ -1,12 +1,14 @@
-const polishLetters = [
-  'A', 'a', 'Ą', 'ą', 'B', 'b', 'C', 'c', 'Ć', 'ć', 
-  'D', 'd', 'E', 'e', 'Ę', 'ę', 'F', 'f', 'G', 'g', 
-  'H', 'h', 'I', 'i', 'J', 'j', 'K', 'k', 'L', 'l', 
-  'Ł', 'ł', 'M', 'm', 'N', 'n', 'Ń', 'ń', 'O', 'o', 
-  'Ó', 'ó', 'P', 'p', 'R', 'r', 'S', 's', 'Ś', 'ś', 
-  'T', 't', 'U', 'u', 'W', 'w', 'Y', 'y', 'Z', 'z', 
-  'Ź', 'ź', 'Ż', 'ż'];
 
+// const polishLetters = [
+//   'A', 'a', 'Ą', 'ą', 'B', 'b', 'C', 'c', 'Ć', 'ć', 
+//   'D', 'd', 'E', 'e', 'Ę', 'ę', 'F', 'f', 'G', 'g', 
+//   'H', 'h', 'I', 'i', 'J', 'j', 'K', 'k', 'L', 'l', 
+//   'Ł', 'ł', 'M', 'm', 'N', 'n', 'Ń', 'ń', 'O', 'o', 
+//   'Ó', 'ó', 'P', 'p', 'R', 'r', 'S', 's', 'Ś', 'ś', 
+//   'T', 't', 'U', 'u', 'W', 'w', 'Y', 'y', 'Z', 'z', 
+//   'Ź', 'ź', 'Ż', 'ż'];
+//   };
+  
 const range = (length, start) => {
   return [...Array(length).keys()].map(i => i + (start || 0));
 }
@@ -46,6 +48,10 @@ class TextReader {
   currentPosition() {
     return this.position;
   }
+  
+  currentLetter(position) {
+    return this.text[position];
+  }
 }
 
 class TextSample extends React.Component {
@@ -54,10 +60,11 @@ class TextSample extends React.Component {
     this.text = new TextReader(props.text);
     this.lettersInRow = 10;
     this.rowsInText = 3;
+    this.maxLetters = this.lettersInRow * this.rowsInText;
 
     this.state = {
       blinking: false,
-      sample: new TextReader(this.text.nextChunk(this.lettersInRow * this.rowsInText)),
+      sample: new TextReader(this.text.nextChunk(this.maxLetters)),
       cursorPosition: 0
     };
   }
@@ -74,10 +81,57 @@ class TextSample extends React.Component {
 		setTimeout(this.blink.bind(this), 700);
 	}
 
+  componentWillMount() {
+    window.addEventListener('keydown', this.handleKeyDown.bind(this));
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this.handleKeyDown);
+  }
+  
+  letterMatch(input, target) {
+    const matches = {
+      'a': ['a', 'ą'],
+      'b': ['b'],
+      'c': ['c', 'ć'],
+      'd': ['d'],
+      'e': ['e', 'ę'],
+      'f': ['f'],
+      'g': ['g'],
+      'h': ['h'],
+      'i': ['i'],
+      'j': ['j'],
+      'k': ['k'],
+      'l': ['l', 'ł'],
+      'm': ['m'],
+      'n': ['n', 'ń'],
+      'o': ['o', 'ó'],
+      'p': ['p'],
+      'r': ['r'],
+      's': ['s', 'ś'],
+      't': ['t'],
+      'u': ['u'],
+      'w': ['w'],
+      'y': ['y'],
+      'z': ['z', 'ź', 'ż'],
+      ' ': [' ']
+    }
+    const targets = matches[input.toLowerCase()];
+    return targets ? targets.includes(target.toLowerCase()) : false;
+  }
+
+  handleKeyDown(event) {
+    this.playAudio(this.state.sample.currentLetter(this.state.cursorPosition));
+    if (this.letterMatch(event.key, this.state.sample.currentLetter(this.state.cursorPosition))) {
+      const cursorPosition = (this.state.cursorPosition + 1 === this.maxLetters) ? 0 : this.state.cursorPosition + 1;
+      this.setState({ cursorPosition, blinking: true });
+    }
+  }
+
 	componentDidMount () {
 		this.blink();
 	}
-
+	
   renderLetter(index, letter) {
     const blinkingClass = (index === this.state.cursorPosition && this.state.blinking) ? 'blinking' : '';
     const className = `letter one ${blinkingClass} ${index}`;
@@ -86,19 +140,17 @@ class TextSample extends React.Component {
   }
 
   renderRow() {
-    const row = range(this.lettersInRow).map(() => {
+    return range(this.lettersInRow).map(() => {
       const sample = this.state.sample;
       const letter = sample.next();
       const position = sample.currentPosition();
 
       return this.renderLetter(position, letter)
     });
-
-    return <div className="row">{ row }</div>;
   }
 
   render() {
-    const rows = range(this.rowsInText).map(() => this.renderRow(this.state.sample));
+    const rows = range(this.rowsInText).map((rowIndex) => <div key={ rowIndex } className="row">{ this.renderRow(this.state.sample) }</div>);
     return <div>
       { rows }
     </div>;
@@ -127,14 +179,14 @@ class Keyboard extends React.Component {
         <div className="row">
           { renderKey('shift', 'two-half') }
           { ['z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/'].map(l => renderKey(l, 'one')) }
-          { renderKey('shift', 'two-half') }
+          { renderKey('shift ', 'two-half') }
         </div>
         <div className="row">
           { renderKey('ctrl', 'two') }
           { renderKey('alt', 'two') }
           { renderKey('spacebar', 'five') }
-          { renderKey('alt', 'one-half') }
-          { renderKey('ctrl', 'one') }
+          { renderKey('alt ', 'one-half') }
+          { renderKey('ctrl ', 'one') }
           { renderKey('', 'two-half') }
         </div>
       </div>
@@ -147,7 +199,7 @@ class Container extends React.Component {
   constructor(props) {
     super(props);
   }
-  
+
   render() {
     return <div>
       <TextSample text="Błona biologiczna może odkładać się na granicy faz niezależnie od ich rodzaju."/>
