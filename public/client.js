@@ -7,13 +7,58 @@ const polishLetters = [
   'T', 't', 'U', 'u', 'W', 'w', 'Y', 'y', 'Z', 'z', 
   'Ź', 'ź', 'Ż', 'ż'];
 
-class TextSample extends React.Component {
-  render() {
-    const renderLetter = letter => <div key={ letter} className="box one">{ letter }</div>;
-    const renderRow = text => <div className="row">{ [...Array(16)].forEach(i => renderLetter(text.shift())) }</div>;
+class TextReader {
+  constructor(text) {
+    this.text = text;
+    this.position = 0;
+  }
 
+  next() {
+    if (this.position === this.text.length) {
+      this.position = -1;
+    }
+    return this.text.charAt(this.position++);
+  }
+
+  previous() {
+    if (this.position === 0) {
+      this.position = this.text.length;
+    }
+    return this.text.charAt(this.position--);
+  }
+}
+
+class AudioPlayer extends React.Component {
+  reunder() {
+    return <audio src="{ this.props.audioSrc }" controls autoplay/>;
+  }
+}
+
+class TextSample extends React.Component {
+  constructor(props) {
+    super(props);
+    this.lettersInRow = 10;
+    this.rowsInText = 3;
+    this.text = new TextReader(props.sample);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.text = new TextReader(this.props.sample);
+  }
+
+  renderLetter(index, letter) {
+    return <div key={ index } className="letter one">{ letter }</div>;
+  }
+
+  renderRow() {
+    const row = [...Array(this.lettersInRow)].map(i => this.renderLetter(i, this.text.next()));
+    return <div className="row">{ row }</div>;
+  }
+
+  render() {
     const sample = this.props.sample.split('');
-    return [...Array(4)].forEach(i => renderRow(sample));
+    const rows = [...Array(this.rowsInText)].map(() => this.renderRow(sample));
+    return <div>{ rows }</div>;
   }
 }
 
@@ -62,7 +107,7 @@ class Container extends React.Component {
   
   render() {
     return <div>
-      <TextSample sample="W oświadczeniu na stronie internetowej organizacji padają słowa, że minister mówi nieprawdę."/>
+      <TextSample sample="This is just a test with a number of letters"/>
       <Keyboard/>
     </div>
   }
