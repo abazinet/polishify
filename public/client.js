@@ -1,3 +1,8 @@
+import { Provider, connect } from 'ReactRedux';
+import { bindActionCreators } from 'Redux';
+
+import store from 'store';
+import * as actions from 'actions';
 
 // const polishLetters = [
 //   'A', 'a', 'Ą', 'ą', 'B', 'b', 'C', 'c', 'Ć', 'ć', 
@@ -9,8 +14,8 @@
 //   'Ź', 'ź', 'Ż', 'ż'];
 //   };
   
-const range = (length, start) => {
-  return [...Array(length).keys()].map(i => i + (start || 0));
+const range = length => {
+  return [...Array(length).keys()];
 }
 
 class TextReader {
@@ -58,9 +63,10 @@ class TextSample extends React.Component {
   constructor(props) {
     super(props);
     this.text = new TextReader(props.text);
-    this.lettersInRow = 10;
+    this.lettersInRow = 20;
     this.rowsInText = 3;
     this.maxLetters = this.lettersInRow * this.rowsInText;
+    this.word = [];
 
     this.state = {
       blinking: false,
@@ -121,8 +127,17 @@ class TextSample extends React.Component {
   }
 
   handleKeyDown(event) {
-    this.playAudio(this.state.sample.currentLetter(this.state.cursorPosition));
-    if (this.letterMatch(event.key, this.state.sample.currentLetter(this.state.cursorPosition))) {
+    const currentLetter = this.state.sample.currentLetter(this.state.cursorPosition);
+
+    if (this.letterMatch(event.key, currentLetter)) {
+      this.playAudio(currentLetter);
+
+      if (currentLetter === ' ') {
+        this.playAudio(this.word.join(''));
+        this.word = [];
+      } else {
+        this.word.push(currentLetter);
+      }
       const cursorPosition = (this.state.cursorPosition + 1 === this.maxLetters) ? 0 : this.state.cursorPosition + 1;
       this.setState({ cursorPosition, blinking: true });
     }
@@ -199,16 +214,28 @@ class Container extends React.Component {
   constructor(props) {
     super(props);
   }
+  
+  componentDidMount() {
+    this.props.loadText('style.css');
+  }
 
   render() {
-    return <div>
-      <TextSample text="Błona biologiczna może odkładać się na granicy faz niezależnie od ich rodzaju."/>
+    debugger;
+    return <div className="container">
+      <TextSample text={ this.props.text }/>
       <Keyboard/>
     </div>
   }
 }
 
+const App = connect(
+  state => state,
+  dispatch => bindActionCreators(actions, dispatch)
+)(Container);
+
 ReactDOM.render(
-  <Container />,
+  <Provider store={ store }>
+    <App/>
+  </Provider>,
   document.getElementById('app')
 );

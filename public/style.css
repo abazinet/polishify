@@ -1,3 +1,7 @@
+.container {
+  margin: 0 auto;
+  max-width: 1000px;
+}
 .keyboard {
   margin: 10px;
 }
@@ -23,9 +27,9 @@
 }
 
 .letter {
+  font-size: 300%;
   background: ##fff;
   color: #444;
-  margin:0 5px 0 0; 
   text-align: center;
   cursor: pointer;
 }
