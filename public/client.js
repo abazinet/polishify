@@ -4,9 +4,14 @@ import { bindActionCreators } from 'Redux';
 import store from 'store';
 import * as actions from 'actions';
 
-const range = length => {
-  return [...Array(length).keys()];
-}
+const range = length => [...Array(length).keys()];
+
+const polishMap = {
+  'a': 'aą', 'b': 'b', 'c': 'cć', 'd': 'd', 'e': 'eę', 'f': 'f', 'g': 'g', 'h': 'h', 'i': 'i', 'j': 'j', 'k': 'k', 'l': 'lł',
+  'm': 'm', 'n': 'nń', 'o': 'oó', 'p': 'p', 'r': 'r', 's': 'sś', 't': 't', 'u': 'u', 'w': 'w', 'y': 'y', 'z': 'zźż', ' ': ' '
+};
+
+const polishAll = Object.values(polishMap).join('');
 
 class TextReader {
   constructor(text) {
@@ -76,13 +81,15 @@ class TextSample extends React.Component {
     }
   }
 
-  playAudio(letter) {
-    const synth = window.speechSynthesis;
-    const speech = new SpeechSynthesisUtterance(letter);
-    speech.lang = 'pl-PL';
-    synth.speak(speech);
+  playAudio(text) {
+    if (text) {
+      const synth = window.speechSynthesis;
+      const speech = new SpeechSynthesisUtterance(text.trim());
+      speech.lang = 'pl-PL';
+      synth.speak(speech);
+    }
   }
-  
+
   blink() {
 		this.setState({ blinking: !this.state.blinking });
 		setTimeout(this.blink.bind(this), 700);
@@ -97,49 +104,22 @@ class TextSample extends React.Component {
   }
   
   letterMatch(input, target) {
-    const matches = {
-      'a': ['a', 'ą'],
-      'b': ['b'],
-      'c': ['c', 'ć'],
-      'd': ['d'],
-      'e': ['e', 'ę'],
-      'f': ['f'],
-      'g': ['g'],
-      'h': ['h'],
-      'i': ['i'],
-      'j': ['j'],
-      'k': ['k'],
-      'l': ['l', 'ł'],
-      'm': ['m'],
-      'n': ['n', 'ń'],
-      'o': ['o', 'ó'],
-      'p': ['p'],
-      'r': ['r'],
-      's': ['s', 'ś'],
-      't': ['t'],
-      'u': ['u'],
-      'w': ['w'],
-      'y': ['y'],
-      'z': ['z', 'ź', 'ż'],
-      ' ': [' ']
-    }
-    const targets = matches[input.toLowerCase()];
-    return targets ? targets.includes(target.toLowerCase()) : false;
+    const targets = polishMap[input.toLowerCase()];
+    return targets ? targets.includes(target) : false;
   }
 
   handleKeyDown(event) {
-    const currentLetter = this.state.sample.currentLetter(this.state.cursorPosition);
-    const polishLetters = 'AaĄąBbCcĆćDdEeĘęFfGgHhIiJjKkLlŁłMmNnŃńOoÓóPpRrSsŚśTtUuWwYyZzŹźŻż';
-  
-    if (!polishLetters.includes(currentLetter) || this.letterMatch(event.key, currentLetter)) {
-      this.playAudio(currentLetter);
+    const currentLetter = this.state.sample.currentLetter(this.state.cursorPosition).toLowerCase();
 
+    if (!polishAll.includes(currentLetter) || this.letterMatch(event.key, currentLetter)) {
+      this.playAudio(currentLetter);
+      this.word.push(currentLetter);
+  
       if (currentLetter === ' ') {
         this.playAudio(this.word.join(''));
         this.word = [];
-      } else {
-        this.word.push(currentLetter);
       }
+  
       if (this.state.cursorPosition + 1 === this.maxLetters) {
         this.setState({
           cursorPosition: 0,
@@ -217,43 +197,6 @@ class Keyboard extends React.Component {
     );
   }
 }
-
-// Content
-class ContentPicker extends React.Component {
-  pickContent() {
-    this.contentPicker({ disabled: true });
-    this.props.onSend(this.state.msg)
-      .then(() => {
-        this.setState({ msg: '', disabled: false });
-        ReactDOM.findDOMNode(this.refs.sendMsg).focus();
-      }).catch(err => {
-      console.log(err);
-      this.setState({ disabled: false });
-    });
-  }
-
-  onChange(evt) {
-    this.setState({ msg: evt.target.value })
-  }
-
-  handleOnKeyPress(evt) {
-    if (evt.key === 'Enter') {
-      this.sendMsg();
-    }
-  }
-
-  render() {
-    return <input className="contentPicker"
-             type="text"
-             value={ this.props.url }
-             disabled={ this.props.disabled }
-             ref="contentPicker"
-             onChange={ this.onChange.bind(this) }
-             onKeyPress={ this.handleOnKeyPress.bind(this) }>
-      </input>;
-  }
-}
-
 
 // Main component
 class Container extends React.Component {

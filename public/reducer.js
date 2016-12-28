@@ -1,6 +1,6 @@
 const defaultState = {
   content: {
-    sample: 'No sample loaded.'
+    sample: 'Loading...'
   }
 };
 
