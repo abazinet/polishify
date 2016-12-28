@@ -4,16 +4,6 @@ import { bindActionCreators } from 'Redux';
 import store from 'store';
 import * as actions from 'actions';
 
-// const polishLetters = [
-//   'A', 'a', 'Ą', 'ą', 'B', 'b', 'C', 'c', 'Ć', 'ć', 
-//   'D', 'd', 'E', 'e', 'Ę', 'ę', 'F', 'f', 'G', 'g', 
-//   'H', 'h', 'I', 'i', 'J', 'j', 'K', 'k', 'L', 'l', 
-//   'Ł', 'ł', 'M', 'm', 'N', 'n', 'Ń', 'ń', 'O', 'o', 
-//   'Ó', 'ó', 'P', 'p', 'R', 'r', 'S', 's', 'Ś', 'ś', 
-//   'T', 't', 'U', 'u', 'W', 'w', 'Y', 'y', 'Z', 'z', 
-//   'Ź', 'ź', 'Ż', 'ż'];
-//   };
-  
 const range = length => {
   return [...Array(length).keys()];
 }
@@ -74,6 +64,17 @@ class TextSample extends React.Component {
       cursorPosition: 0
     };
   }
+  
+  componentWillReceiveProps(newProps) {
+    if (this.props.text !== newProps.text) {
+      this.text = new TextReader(newProps.text);
+      this.word = [];
+      this.setState({
+        sample: new TextReader(this.text.nextChunk(this.maxLetters)),
+        cursorPosition: 0
+      });
+    }
+  }
 
   playAudio(letter) {
     const synth = window.speechSynthesis;
@@ -128,8 +129,9 @@ class TextSample extends React.Component {
 
   handleKeyDown(event) {
     const currentLetter = this.state.sample.currentLetter(this.state.cursorPosition);
-
-    if (this.letterMatch(event.key, currentLetter)) {
+    const polishLetters = 'AaĄąBbCcĆćDdEeĘęFfGgHhIiJjKkLlŁłMmNnŃńOoÓóPpRrSsŚśTtUuWwYyZzŹźŻż';
+  
+    if (!polishLetters.includes(currentLetter) || this.letterMatch(event.key, currentLetter)) {
       this.playAudio(currentLetter);
 
       if (currentLetter === ' ') {
@@ -138,8 +140,15 @@ class TextSample extends React.Component {
       } else {
         this.word.push(currentLetter);
       }
-      const cursorPosition = (this.state.cursorPosition + 1 === this.maxLetters) ? 0 : this.state.cursorPosition + 1;
-      this.setState({ cursorPosition, blinking: true });
+      if (this.state.cursorPosition + 1 === this.maxLetters) {
+        this.setState({
+          cursorPosition: 0,
+          blinking: true,
+          sample: new TextReader(this.text.nextChunk(this.maxLetters))
+        });
+      } else {
+        this.setState({ cursorPosition: this.state.cursorPosition + 1, blinking: true });
+      }
     }
   }
 
