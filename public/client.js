@@ -25,11 +25,11 @@ class TextReader {
   }
 
   nextChunk(length) {
-    return [...Array(length)].map(() => this.next());
+    return range(length).map(() => this.next());
   }
-  
+
   previousChunk(length) {
-    return [...Array(length)].map(() => this.previous()).reverse();
+    return range(length).map(() => this.previous()).reverse();
   }
 
   next() {
@@ -209,6 +209,43 @@ class Keyboard extends React.Component {
   }
 }
 
+// Content
+class ContentPicker extends React.Component {
+  pickContent() {
+    this.contentPicker({ disabled: true });
+    this.props.onSend(this.state.msg)
+      .then(() => {
+        this.setState({ msg: '', disabled: false });
+        ReactDOM.findDOMNode(this.refs.sendMsg).focus();
+      }).catch(err => {
+      console.log(err);
+      this.setState({ disabled: false });
+    });
+  }
+
+  onChange(evt) {
+    this.setState({ msg: evt.target.value })
+  }
+
+  handleOnKeyPress(evt) {
+    if (evt.key === 'Enter') {
+      this.sendMsg();
+    }
+  }
+
+  render() {
+    return <input className="contentPicker"
+             type="text"
+             value={ this.props.url }
+             disabled={ this.props.disabled }
+             ref="contentPicker"
+             onChange={ this.onChange.bind(this) }
+             onKeyPress={ this.handleOnKeyPress.bind(this) }>
+      </input>;
+  }
+}
+
+
 // Main component
 class Container extends React.Component {
   constructor(props) {
@@ -216,13 +253,12 @@ class Container extends React.Component {
   }
   
   componentDidMount() {
-    this.props.loadText('style.css');
+    this.props.loadDefaultSample();
   }
 
   render() {
-    debugger;
     return <div className="container">
-      <TextSample text={ this.props.text }/>
+      <TextSample text={ this.props.content.sample }/>
       <Keyboard/>
     </div>
   }

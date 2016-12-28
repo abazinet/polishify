@@ -1,11 +1,13 @@
 const defaultState = {
-  text: 'Błona biologiczna może odkładać się na granicy faz niezależnie od ich rodzaju.'
-}
+  content: {
+    sample: 'No sample loaded.'
+  }
+};
 
 export default function reducer(state = defaultState, action) {
     switch(action.type){
-        case 'TEXT_LOADED':
-          return { text: action.text }; // TODO: ALEX: Immutable
+        case 'SAMPLE_LOADED':
+          return { content: { sample: action.sample } }; // TODO: ALEX: Immutable
           break;
         default:
           return state;
