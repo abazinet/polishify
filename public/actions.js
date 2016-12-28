@@ -28,7 +28,6 @@ actions.loadSampleFrom = url => {
         let text = '';
         let item = results.iterateNext();
         while (item) {
-          console.log(item.textContent);
           text = text + item.textContent;
           item = results.iterateNext();
         }  
