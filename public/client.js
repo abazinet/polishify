@@ -8,12 +8,13 @@ const range = length => [...Array(length).keys()];
 
 const polishMap = {
   'a': 'aą', 'b': 'b', 'c': 'cć', 'd': 'd', 'e': 'eę', 'f': 'f', 'g': 'g', 'h': 'h', 'i': 'i', 'j': 'j', 'k': 'k', 'l': 'lł',
-  'm': 'm', 'n': 'nń', 'o': 'oó', 'p': 'p', 'r': 'r', 's': 'sś', 't': 't', 'u': 'u', 'w': 'w', 'y': 'y', 'z': 'zźż', ' ': ' '
+  'm': 'm', 'n': 'nń', 'o': 'oó', 'p': 'p', 'r': 'r', 's': 'sś', 't': 't', 'u': 'u', 'w': 'w', 'y': 'y', 'z': 'zźż', ' ': ' ',
+  '0': '0', '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9'
 };
 
 const polishAll = Object.values(polishMap).join('');
 
-const cachedLettersAudio = polishAll.split('').map(letter => {
+const cachedLettersAudio = polishAll.trim().split('').map(letter => {
   const audio = new Audio(`https://cdn.gomix.com/c41eeb90-b28a-4268-8f0f-37503b86c52e%2F${encodeURIComponent(letter)}.mp3`);
   return { letter, audio };
 });
@@ -116,6 +117,16 @@ class TextSample extends React.Component {
   }
 
   handleKeyDown(event) {
+    if (event.code === 'ArrowRight') {
+      const cursorPosition = (++this.state.cursorPosition) % this.maxLetters;
+      this.setState({ cursorPosition, blinking: true });
+    }
+
+    if (event.code === 'ArrowLeft') {
+      const cursorPosition = (this.state.cursorPosition - 1) < 0 ? this.maxLetters - 1 : this.state.cursorPosition - 1;
+      this.setState({ cursorPosition, blinking: true });
+    }
+
     const currentLetter = this.state.sample.currentLetter(this.state.cursorPosition).toLowerCase();
 
     if (!polishAll.includes(currentLetter) || this.letterMatch(event.key, currentLetter)) {
