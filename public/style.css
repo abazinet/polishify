@@ -1,3 +1,7 @@
+.container {
+  margin: 0 auto;
+  max-width: 1000px;
+}
 .keyboard {
   margin: 10px;
 }
@@ -9,8 +13,8 @@
 }
 
 .box {
-  background:#444;
-  color:#fff;
+  background: #444;
+  color :#fff;
   margin:0 5px 0 0; 
   text-align: center;
   cursor: pointer;
@@ -20,6 +24,18 @@
   transform: translateY(1px);
   background: #333;
   box-shadow: 0 1px 0 #000;
+}
+
+.letter {
+  font-size: 300%;
+  background: ##fff;
+  color: #444;
+  text-align: center;
+  cursor: pointer;
+}
+
+.blinking {
+  background: #999;
 }
 
 .one { flex: 1; }
