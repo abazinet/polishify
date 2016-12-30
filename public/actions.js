@@ -8,9 +8,6 @@ const sampleLoaded = sample => {
 };
 
 actions.loadSampleFrom = url => {
-  const encodedUrl = encodeURIComponent(url);
-  const yql = `https://query.yahooapis.com/v1/public/yql?q=select * from html where url="${encodedUrl}"&format=html`;
-
   const extractContent = html => {
     const div = document.createElement('div');
     div.innerHTML = html;
@@ -25,7 +22,10 @@ actions.loadSampleFrom = url => {
     }  
 
     return text;
-  }
+  };
+  
+  const encodedUrl = encodeURIComponent(url);
+  const yql = `https://query.yahooapis.com/v1/public/yql?q=select * from html where url="${encodedUrl}"&format=html`;
 
   return dispatch => {
     fetch(yql)

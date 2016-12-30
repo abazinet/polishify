@@ -13,6 +13,11 @@ const polishMap = {
 
 const polishAll = Object.values(polishMap).join('');
 
+const cachedLettersAudio = polishAll.split('').map(letter => {
+  const audio = new Audio(`https://cdn.gomix.com/c41eeb90-b28a-4268-8f0f-37503b86c52e%2F${encodeURIComponent(letter)}.mp3`);
+  return { letter, audio };
+});
+
 class TextReader {
   constructor(text) {
     this.text = Array.isArray(text) ? text : text.split('');
@@ -82,7 +87,9 @@ class TextSample extends React.Component {
   }
 
   playAudio(text) {
-    if (text) {
+    if (text.length === 1 && text !== ' ' && polishAll.includes(text)) {
+      cachedLettersAudio.find(audio => audio.letter === text).audio.play();
+    } else {
       const synth = window.speechSynthesis;
       const speech = new SpeechSynthesisUtterance(text.trim());
       speech.lang = 'pl-PL';
@@ -112,7 +119,7 @@ class TextSample extends React.Component {
     const currentLetter = this.state.sample.currentLetter(this.state.cursorPosition).toLowerCase();
 
     if (!polishAll.includes(currentLetter) || this.letterMatch(event.key, currentLetter)) {
-      this.playAudio(currentLetter);
+      if (polishAll.includes(currentLetter)) this.playAudio(currentLetter);
       this.word.push(currentLetter);
   
       if (currentLetter === ' ') {

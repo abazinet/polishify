@@ -1,8 +1,11 @@
 .container {
   margin: 0 auto;
+  padding-top: 50px;
   max-width: 1000px;
 }
+
 .keyboard {
+  padding-top: 50px;
   margin: 10px;
 }
 
