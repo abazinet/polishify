@@ -16,6 +16,7 @@ const polishAll = Object.values(polishMap).join('');
 
 const cachedLettersAudio = polishAll.trim().split('').map(letter => {
   const audio = new Audio(`https://cdn.gomix.com/c41eeb90-b28a-4268-8f0f-37503b86c52e%2F${encodeURIComponent(letter)}.mp3`);
+  audio.preload = 'auto';
   return { letter, audio };
 });
 
@@ -64,8 +65,8 @@ class TextSample extends React.Component {
   constructor(props) {
     super(props);
     this.text = new TextReader(props.text);
-    this.lettersInRow = 20;
-    this.rowsInText = 3;
+    this.lettersInRow = 30;
+    this.rowsInText = 4;
     this.maxLetters = this.lettersInRow * this.rowsInText;
     this.word = [];
 
@@ -206,7 +207,7 @@ class Keyboard extends React.Component {
         <div className="row">
           { renderKey('ctrl', 'two') }
           { renderKey('alt', 'two') }
-          { renderKey('spacebar', 'five') }
+          { renderKey('space', 'five') }
           { renderKey('alt ', 'one-half') }
           { renderKey('ctrl ', 'one') }
           { renderKey('', 'two-half') }
@@ -235,7 +236,7 @@ class Container extends React.Component {
 }
 
 const App = connect(
-  state => state,
+  state => state.toJS(),
   dispatch => bindActionCreators(actions, dispatch)
 )(Container);
 

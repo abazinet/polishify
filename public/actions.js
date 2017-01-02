@@ -17,9 +17,9 @@ actions.loadSampleFrom = url => {
     let text = '';
     let item = results.iterateNext();
     while (item) {
-      text = text + item.textContent;
+      text = `${text}${item.textContent} `;
       item = results.iterateNext();
-    }  
+    }
 
     return text;
   };
@@ -36,7 +36,8 @@ actions.loadSampleFrom = url => {
 };
 
 actions.loadDefaultSample = () => {
-  return actions.loadSampleFrom('https://pl.wikipedia.org/wiki/Specjalna:Losowa_strona');
+  //return actions.loadSampleFrom('https://pl.wikipedia.org/wiki/Specjalna:Losowa_strona');
+  return actions.loadSampleFrom('http://literat.ug.edu.pl/~literat/hsnowel/003.htm');
 };
 
 export default actions;
