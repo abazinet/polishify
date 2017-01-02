@@ -6,6 +6,12 @@ import * as actions from 'actions';
 
 const range = length => [...Array(length).keys()];
 
+const connectAll = Component => connect(
+  state => state.toJS(),
+  dispatch => bindActionCreators(actions, dispatch)
+)(Component);
+
+
 const polishMap = {
   'a': 'aą', 'b': 'b', 'c': 'cć', 'd': 'd', 'e': 'eę', 'f': 'f', 'g': 'g', 'h': 'h', 'i': 'i', 'j': 'j', 'k': 'k', 'l': 'lł',
   'm': 'm', 'n': 'nń', 'o': 'oó', 'p': 'p', 'r': 'r', 's': 'sś', 't': 't', 'u': 'u', 'w': 'w', 'y': 'y', 'z': 'zźż', ' ': ' ',
@@ -20,72 +26,15 @@ const cachedLettersAudio = polishAll.trim().split('').map(letter => {
   return { letter, audio };
 });
 
-class TextReader {
-  constructor(text) {
-    this.text = Array.isArray(text) ? text : text.split('');
-    this.position = -1;
-  }
-
-  nextChunk(length) {
-    return range(length).map(() => this.next());
-  }
-
-  previousChunk(length) {
-    return range(length).map(() => this.previous()).reverse();
-  }
-
-  next() {
-    this.position++;
-    if (this.position === this.text.length) {
-      this.position = 0;
-    }
-
-    return this.text[this.position];
-  }
-
-  previous() {
-    this.position--;
-    if (this.position === -1) {
-      this.position = this.text.length - 1;
-    }
-
-    return this.text[this.position];
-  }
-  
-  currentPosition() {
-    return this.position;
-  }
-  
-  currentLetter(position) {
-    return this.text[position];
-  }
-}
 
 class TextSample extends React.Component {
   constructor(props) {
     super(props);
-    this.text = new TextReader(props.text);
-    this.lettersInRow = 30;
-    this.rowsInText = 4;
-    this.maxLetters = this.lettersInRow * this.rowsInText;
     this.word = [];
 
     this.state = {
-      blinking: false,
-      sample: new TextReader(this.text.nextChunk(this.maxLetters)),
-      cursorPosition: 0
+      blinking: false
     };
-  }
-  
-  componentWillReceiveProps(newProps) {
-    if (this.props.text !== newProps.text) {
-      this.text = new TextReader(newProps.text);
-      this.word = [];
-      this.setState({
-        sample: new TextReader(this.text.nextChunk(this.maxLetters)),
-        cursorPosition: 0
-      });
-    }
   }
 
   playAudio(text) {
@@ -101,34 +50,44 @@ class TextSample extends React.Component {
 
   blink() {
 		this.setState({ blinking: !this.state.blinking });
-		setTimeout(this.blink.bind(this), 700);
+		this.timer = setTimeout(this.blink.bind(this), 700);
 	}
 
   componentWillMount() {
-    window.addEventListener('keydown', this.handleKeyDown.bind(this));
+    window.addEventListener('keypress', this.handleKeyPress.bind(this));
   }
 
   componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleKeyDown);
+    window.removeEventListener('keypress', this.handleKeyPress);
   }
-  
+
+	componentDidMount() {
+		this.blink();
+	}
+	
+	componentWillUnmount() {
+	  clearTimeout(this.timer);
+	}
+	
   letterMatch(input, target) {
     const targets = polishMap[input.toLowerCase()];
     return targets ? targets.includes(target) : false;
   }
 
-  handleKeyDown(event) {
+  handleKeyPress(event) {
     if (event.code === 'ArrowRight') {
-      const cursorPosition = (++this.state.cursorPosition) % this.maxLetters;
-      this.setState({ cursorPosition, blinking: true });
+      this.props.cursorForward();
+      this.setState({ blinking: true });
     }
 
     if (event.code === 'ArrowLeft') {
-      const cursorPosition = (this.state.cursorPosition - 1) < 0 ? this.maxLetters - 1 : this.state.cursorPosition - 1;
-      this.setState({ cursorPosition, blinking: true });
+      this.props.cursorBackward();
+      this.setState({ blinking: true });
     }
 
-    const currentLetter = this.state.sample.currentLetter(this.state.cursorPosition).toLowerCase();
+    const currentLetter = this.props.content.sample[this.props.view.start + this.props.view.cursor].toLowerCase();
+    
+    console.log(`${currentLetter} === ${event.key}`);
 
     if (!polishAll.includes(currentLetter) || this.letterMatch(event.key, currentLetter)) {
       if (polishAll.includes(currentLetter)) this.playAudio(currentLetter);
@@ -138,45 +97,25 @@ class TextSample extends React.Component {
         this.playAudio(this.word.join(''));
         this.word = [];
       }
-  
-      if (this.state.cursorPosition + 1 === this.maxLetters) {
-        this.setState({
-          cursorPosition: 0,
-          blinking: true,
-          sample: new TextReader(this.text.nextChunk(this.maxLetters))
-        });
-      } else {
-        this.setState({ cursorPosition: this.state.cursorPosition + 1, blinking: true });
-      }
+
+      this.props.cursorForward();
     }
   }
 
-	componentDidMount () {
-		this.blink();
-	}
-	
-  renderLetter(index, letter) {
-    const blinkingClass = (index === this.state.cursorPosition && this.state.blinking) ? 'blinking' : '';
-    const className = `letter one ${blinkingClass} ${index}`;
+  renderLetter(letter, letterIndex) {
+    const blinkingClass = (letterIndex === this.props.view.cursor && this.state.blinking) ? 'blinking' : '';
+    const className = `letter one ${blinkingClass} ${letterIndex}`;
 
-    return <div key={ index } className={ className } onClick={ this.playAudio.bind(this, letter) }>{ letter }</div>;
+    return <div key={ letterIndex } className={ className } onClick={ this.playAudio.bind(this, letter) }>{ letter }</div>;
   }
 
-  renderRow() {
-    return range(this.lettersInRow).map(() => {
-      const sample = this.state.sample;
-      const letter = sample.next();
-      const position = sample.currentPosition();
-
-      return this.renderLetter(position, letter)
-    });
+  renderRow(row, rowIndex) {
+    const letters = row.map((letter, letterIndex) => this.renderLetter(letter, (rowIndex * this.props.config.columns) + letterIndex));
+    return <div key={ rowIndex } className="row">{ letters }</div>;
   }
 
   render() {
-    const rows = range(this.rowsInText).map((rowIndex) => <div key={ rowIndex } className="row">{ this.renderRow(this.state.sample) }</div>);
-    return <div>
-      { rows }
-    </div>;
+    return <div>{ this.props.view.text.map(this.renderRow.bind(this)) }</div>;
   }
 }
 
@@ -228,21 +167,22 @@ class Container extends React.Component {
   }
 
   render() {
-    return <div className="container">
-      <TextSample text={ this.props.content.sample }/>
-      <Keyboard/>
-    </div>
+    const ConnectedTextSample = connectAll(TextSample);
+
+    return (
+      <div className="container">
+        <ConnectedTextSample />
+        <Keyboard />
+      </div>
+    );
   }
 }
 
-const App = connect(
-  state => state.toJS(),
-  dispatch => bindActionCreators(actions, dispatch)
-)(Container);
+const ConnectedContainer = connectAll(Container);
 
 ReactDOM.render(
   <Provider store={ store }>
-    <App/>
+    <ConnectedContainer/>
   </Provider>,
   document.getElementById('app')
 );

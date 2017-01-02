@@ -1,5 +1,21 @@
 class actions {}
 
+actions.viewForward = () => {
+  return { type: 'VIEW_FORWARD' };
+};
+
+actions.viewBackward = () => {
+  return { type: 'VIEW_BACKWARD' };
+};
+
+actions.cursorForward = () => {
+  return { type: 'CURSOR_FORWARD' };
+};
+
+actions.cursorBackward = () => {
+  return { type: 'CURSOR_BACKWARD' };
+};
+
 const sampleLoaded = sample => {
   return {
     type: 'SAMPLE_LOADED',
@@ -21,7 +37,7 @@ actions.loadSampleFrom = url => {
       item = results.iterateNext();
     }
 
-    return text;
+    return text.split('');
   };
   
   const encodedUrl = encodeURIComponent(url);
