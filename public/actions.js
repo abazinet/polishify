@@ -59,19 +59,19 @@ actions.loadSampleFrom = url => {
 };
 
 actions.loadDefaultSample = () => {
-  return actions.loadSampleFrom('https://pl.wikipedia.org/wiki/Specjalna:Losowa_strona');
-  //return actions.loadSampleFrom('http://literat.ug.edu.pl/~literat/hsnowel/003.htm');
+  //return actions.loadSampleFrom('https://pl.wikipedia.org/wiki/Specjalna:Losowa_strona');
+  return actions.loadSampleFrom('http://literat.ug.edu.pl/~literat/hsnowel/003.htm');
 };
 
-const showTranslatedText = text => {
+const sayTranslatedText = text => {
   return {
-    type: 'SHOW_TRANSLATED_TEXT',
+    type: 'SAY_TRANSLATED_TEXT',
     text
   };
 };
 
-const hideTranslatedText = () => {
-  return { type: 'HIDE_TRANSLATED_TEXT' };
+const clearTranslatedText = () => {
+  return { type: 'CLEAR_TRANSLATED_TEXT' };
 };
 
 actions.translate = (key, text) => {
@@ -82,8 +82,8 @@ actions.translate = (key, text) => {
   
     fetch(url)
       .then(resp => resp.ok ? resp.json() : resp.statusText)
-      .then(json => dispatch(showTranslatedText(json.data.translations[0].translatedText)))
-      .then(delayHideTranslatedText)
+      .then(json => dispatch(sayTranslatedText(json.data.translations[0].translatedText)))
+      .then(() => dispatch(clearTranslatedText()))
       .catch(console.warn);
   };
 }

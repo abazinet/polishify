@@ -27,16 +27,17 @@ class Config extends React.Component {
   onApiKeyChange(event) {
     this.props.updateGoogleTranslateApiKey(event.target.value);
   }
-  
-  close() {
-    this.props.hideConfig();
-  }
 
   render() {
     return (
       <div>
-        <input type="text" value={ this.props.config.googleTranslateApiKey } placeholder="google translate api key" onChange={ this.onApiKeyChange.bind(this) }></input>
-        <button onClick={ this.close.bind(this) }>close</button>
+        <input
+          type="text"
+          value={ this.props.config.googleTranslateApiKey }
+          placeholder="google translate api key"
+          onChange={ this.onApiKeyChange.bind(this) }>
+        </input>
+        <button onClick={ this.props.hideConfig }>close</button>
       </div>
     );
   }
@@ -54,13 +55,14 @@ class TextSample extends React.Component {
     };
   }
 
-  playAudio(text) {
+  playAudio(text, lang) {
+    console.log(text);
     if (text.length === 1 && text !== ' ' && polishAll.includes(text)) {
       cachedLettersAudio.find(audio => audio.letter === text).audio.play();
     } else {
       const synth = window.speechSynthesis;
       const speech = new SpeechSynthesisUtterance(text.trim());
-      speech.lang = 'pl-PL';
+      speech.lang = lang;
       synth.speak(speech);
     }
   }
@@ -107,7 +109,7 @@ class TextSample extends React.Component {
   
       if (currentLetter === ' ') {
         const text = this.word.join('');
-        this.playAudio(text);
+        this.playAudio(text, 'pl-PL');
         this.props.translate(this.props.config.googleTranslateApiKey, text);
         this.word = [];
       }
@@ -133,14 +135,17 @@ class TextSample extends React.Component {
   }
 
   render() {
-    if (this.props.config.visible) return <ConnectedConfig/>;
+    if (this.props.config.visible) {
+      return <ConnectedConfig/>;
+    }
 
-    const translation = this.props.view.translation;
+    if (this.props.view.translation) {
+      this.playAudio(this.props.view.translation, 'en-US');
+    }
 
     return (
       <div onDoubleClick={this.onDoubleClick.bind(this)}>
         { this.props.view.text.map(this.renderRow.bind(this)) }
-        <div className="row">{ translation }</div>
       </div>
     );
   }

@@ -13,10 +13,10 @@ const defaultState = Immutable.fromJS({
     googleTranslateApiKey: ''
   },
   content: {
-    sample: 'Loading...'.split('')
+    sample: null
   },
   view: {
-    text: [[]],
+    text: [['l', 'o', 'a', 'd', 'i', 'n', 'g', '.', '.', '.']],
     translation: null,
     start: 0,
     cursor: 0
@@ -96,10 +96,10 @@ export default function reducer(state = defaultState, action) {
     case 'UPDATE_GOOGLE_TRANSLATE_API_KEY':
       return state.setIn(['config', 'googleTranslateApiKey'], action.key);
 
-    case 'SHOW_TRANSLATED_TEXT':
+    case 'SAY_TRANSLATED_TEXT':
       return state.setIn(['view', 'translation'], action.text);
 
-    case 'HIDE_TRANSLATED_TEXT':
+    case 'CLEAR_TRANSLATED_TEXT':
       return state.setIn(['view', 'translation'], null);
 
     default:
