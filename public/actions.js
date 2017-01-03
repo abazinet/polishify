@@ -76,17 +76,16 @@ const hideTranslatedText = () => {
 
 actions.translate = (key, text) => {
   const url = `https://translation.googleapis.com/language/translate/v2?key=${key}&source=pl&target=en&q=${encodeURIComponent(text)}`;
-    return dispatch => {
-      fetch(url)
-        .then(resp => resp.ok ? resp.json() : resp.statusText)
-        .then(json => dispatch(showTranslatedText(json.data.translations[0].translatedText)))
-        .then(() => {
-          setTimeout(() => {
-            dispatch(hideTranslatedText())
-          }, 5000)
-        })
-        .catch(console.warn);
-    };
+  
+  return dispatch => {
+    const delayHideTranslatedText = () => setTimeout(() => dispatch(hideTranslatedText()), 5000);
+  
+    fetch(url)
+      .then(resp => resp.ok ? resp.json() : resp.statusText)
+      .then(json => dispatch(showTranslatedText(json.data.translations[0].translatedText)))
+      .then(delayHideTranslatedText)
+      .catch(console.warn);
+  };
 }
 
 export default actions;

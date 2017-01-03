@@ -140,7 +140,7 @@ class TextSample extends React.Component {
     return (
       <div onDoubleClick={this.onDoubleClick.bind(this)}>
         { this.props.view.text.map(this.renderRow.bind(this)) }
-        <div>{ translation }</div>
+        <div className="row">{ translation }</div>
       </div>
     );
   }
