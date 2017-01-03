@@ -1,13 +1,5 @@
 class actions {}
 
-actions.viewForward = () => {
-  return { type: 'VIEW_FORWARD' };
-};
-
-actions.viewBackward = () => {
-  return { type: 'VIEW_BACKWARD' };
-};
-
 actions.cursorForward = () => {
   return { type: 'CURSOR_FORWARD' };
 };

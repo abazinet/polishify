@@ -11,7 +11,6 @@ const connectAll = Component => connect(
   dispatch => bindActionCreators(actions, dispatch)
 )(Component);
 
-
 const polishMap = {
   'a': 'aą', 'b': 'b', 'c': 'cć', 'd': 'd', 'e': 'eę', 'f': 'f', 'g': 'g', 'h': 'h', 'i': 'i', 'j': 'j', 'k': 'k', 'l': 'lł',
   'm': 'm', 'n': 'nń', 'o': 'oó', 'p': 'p', 'r': 'r', 's': 'sś', 't': 't', 'u': 'u', 'w': 'w', 'y': 'y', 'z': 'zźż', ' ': ' ',
@@ -25,7 +24,6 @@ const cachedLettersAudio = polishAll.trim().split('').map(letter => {
   audio.preload = 'auto';
   return { letter, audio };
 });
-
 
 class TextSample extends React.Component {
   constructor(props) {
@@ -53,18 +51,15 @@ class TextSample extends React.Component {
 		this.timer = setTimeout(this.blink.bind(this), 700);
 	}
 
-  componentWillMount() {
-    window.addEventListener('keypress', this.handleKeyPress.bind(this));
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keypress', this.handleKeyPress);
-  }
-
-	componentDidMount() {
+	componentWillMount() {
+    window.addEventListener('keydown', this.handleKeyDown.bind(this));
 		this.blink();
 	}
-	
+
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this.handleKeyDown);
+  }
+
 	componentWillUnmount() {
 	  clearTimeout(this.timer);
 	}
@@ -74,7 +69,7 @@ class TextSample extends React.Component {
     return targets ? targets.includes(target) : false;
   }
 
-  handleKeyPress(event) {
+  handleKeyDown(event) {
     if (event.code === 'ArrowRight') {
       this.props.cursorForward();
       this.setState({ blinking: true });
@@ -86,8 +81,6 @@ class TextSample extends React.Component {
     }
 
     const currentLetter = this.props.content.sample[this.props.view.start + this.props.view.cursor].toLowerCase();
-    
-    console.log(`${currentLetter} === ${event.key}`);
 
     if (!polishAll.includes(currentLetter) || this.letterMatch(event.key, currentLetter)) {
       if (polishAll.includes(currentLetter)) this.playAudio(currentLetter);
@@ -118,6 +111,8 @@ class TextSample extends React.Component {
     return <div>{ this.props.view.text.map(this.renderRow.bind(this)) }</div>;
   }
 }
+
+const ConnectedTextSample = connectAll(TextSample);
 
 class Keyboard extends React.Component {
   render() {
@@ -167,8 +162,6 @@ class Container extends React.Component {
   }
 
   render() {
-    const ConnectedTextSample = connectAll(TextSample);
-
     return (
       <div className="container">
         <ConnectedTextSample />
