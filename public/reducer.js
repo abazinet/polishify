@@ -6,15 +6,18 @@ const LENGTH = COLUMNS * ROWS;
 
 const defaultState = Immutable.fromJS({
   config: {
+    visible: false,
     columns: COLUMNS,
     rows: ROWS,
-    textLength: LENGTH
+    textLength: LENGTH,
+    googleTranslateApiKey: ''
   },
   content: {
     sample: 'Loading...'.split('')
   },
   view: {
     text: [[]],
+    translation: null,
     start: 0,
     cursor: 0
   }
@@ -55,8 +58,6 @@ export default function reducer(state = defaultState, action) {
       return state.withMutations(mutate => {
         const newCursor = mutate.getIn(['view', 'cursor']) + 1;
         mutate.setIn(['view', 'cursor'], newCursor);
-        
-        console.log(mutate.toJS());
 
         if (newCursor === LENGTH) {
           const sample = mutate.getIn(['content', 'sample']);
@@ -85,6 +86,19 @@ export default function reducer(state = defaultState, action) {
           updateViewText(mutate, sample, newStart);
         }
       });
+    
+    case 'SHOW_CONFIG':
+      return state.setIn(['config', 'visible'], true);
+
+    case 'HIDE_CONFIG':
+      return state.setIn(['config', 'visible'], false);
+
+    case 'UPDATE_GOOGLE_TRANSLATE_API_KEY':
+      return state.setIn(['config', 'googleTranslateApiKey'], action.key);
+
+    case 'TRANSLATED_TEXT':
+      console.log(action.text);
+      return state.setIn(['view', 'translation'], action.text);
 
     default:
       return state;

@@ -1,11 +1,26 @@
 class actions {}
 
+actions.showConfig = () => {
+  return { type: 'SHOW_CONFIG' };
+};
+
+actions.hideConfig = () => {
+  return { type: 'HIDE_CONFIG' };
+};
+
 actions.cursorForward = () => {
   return { type: 'CURSOR_FORWARD' };
 };
 
 actions.cursorBackward = () => {
   return { type: 'CURSOR_BACKWARD' };
+};
+
+actions.updateGoogleTranslateApiKey = key => {
+  return {
+    type: 'UPDATE_GOOGLE_TRANSLATE_API_KEY',
+    key
+  };
 };
 
 const sampleLoaded = sample => {
@@ -44,8 +59,25 @@ actions.loadSampleFrom = url => {
 };
 
 actions.loadDefaultSample = () => {
-  //return actions.loadSampleFrom('https://pl.wikipedia.org/wiki/Specjalna:Losowa_strona');
-  return actions.loadSampleFrom('http://literat.ug.edu.pl/~literat/hsnowel/003.htm');
+  return actions.loadSampleFrom('https://pl.wikipedia.org/wiki/Specjalna:Losowa_strona');
+  //return actions.loadSampleFrom('http://literat.ug.edu.pl/~literat/hsnowel/003.htm');
 };
+
+const translatedText = text => {
+  return {
+    type: 'TRANSLATED_TEXT',
+    text
+  };
+};
+
+actions.translate = (key, text) => {
+  const url = `https://translation.googleapis.com/language/translate/v2?key=${key}&source=pl&target=en&q=${encodeURIComponent(text)}`;
+    return dispatch => {
+      fetch(url)
+        .then(resp => resp.ok ? resp.json() : resp.statusText)
+        .then(json => dispatch(translatedText(json.data.translations[0].translatedText)))
+        .catch(console.warn);
+    };
+}
 
 export default actions;

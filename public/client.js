@@ -4,8 +4,6 @@ import { bindActionCreators } from 'Redux';
 import store from 'store';
 import * as actions from 'actions';
 
-const range = length => [...Array(length).keys()];
-
 const connectAll = Component => connect(
   state => state.toJS(),
   dispatch => bindActionCreators(actions, dispatch)
@@ -24,6 +22,27 @@ const cachedLettersAudio = polishAll.trim().split('').map(letter => {
   audio.preload = 'auto';
   return { letter, audio };
 });
+
+class Config extends React.Component {
+  onApiKeyChange(event) {
+    this.props.updateGoogleTranslateApiKey(event.target.value);
+  }
+  
+  close() {
+    this.props.hideConfig();
+  }
+
+  render() {
+    return (
+      <div>
+        <input type="text" value={ this.props.config.googleTranslateApiKey } placeholder="google translate api key" onChange={ this.onApiKeyChange.bind(this) }></input>
+        <button onClick={ this.close.bind(this) }>close</button>
+      </div>
+    );
+  }
+}
+
+const ConnectedConfig = connectAll(Config);
 
 class TextSample extends React.Component {
   constructor(props) {
@@ -87,12 +106,18 @@ class TextSample extends React.Component {
       this.word.push(currentLetter);
   
       if (currentLetter === ' ') {
-        this.playAudio(this.word.join(''));
+        const text = this.word.join('');
+        this.playAudio(text);
+        this.props.translate(this.props.config.googleTranslateApiKey, text);
         this.word = [];
       }
 
       this.props.cursorForward();
     }
+  }
+  
+  onDoubleClick() {
+    this.props.showConfig();
   }
 
   renderLetter(letter, letterIndex) {
@@ -108,7 +133,9 @@ class TextSample extends React.Component {
   }
 
   render() {
-    return <div>{ this.props.view.text.map(this.renderRow.bind(this)) }</div>;
+    if (this.props.config.visible) return <ConnectedConfig/>;
+
+    return <div onDoubleClick={this.onDoubleClick.bind(this)}>{ this.props.view.text.map(this.renderRow.bind(this)) }</div>;
   }
 }
 
