@@ -96,9 +96,11 @@ export default function reducer(state = defaultState, action) {
     case 'UPDATE_GOOGLE_TRANSLATE_API_KEY':
       return state.setIn(['config', 'googleTranslateApiKey'], action.key);
 
-    case 'TRANSLATED_TEXT':
-      console.log(action.text);
+    case 'SHOW_TRANSLATED_TEXT':
       return state.setIn(['view', 'translation'], action.text);
+
+    case 'HIDE_TRANSLATED_TEXT':
+      return state.setIn(['view', 'translation'], null);
 
     default:
       return state;

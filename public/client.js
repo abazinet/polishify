@@ -135,7 +135,14 @@ class TextSample extends React.Component {
   render() {
     if (this.props.config.visible) return <ConnectedConfig/>;
 
-    return <div onDoubleClick={this.onDoubleClick.bind(this)}>{ this.props.view.text.map(this.renderRow.bind(this)) }</div>;
+    const translation = this.props.view.translation;
+
+    return (
+      <div onDoubleClick={this.onDoubleClick.bind(this)}>
+        { this.props.view.text.map(this.renderRow.bind(this)) }
+        <div>{ translation }</div>
+      </div>
+    );
   }
 }
 

@@ -63,11 +63,15 @@ actions.loadDefaultSample = () => {
   //return actions.loadSampleFrom('http://literat.ug.edu.pl/~literat/hsnowel/003.htm');
 };
 
-const translatedText = text => {
+const showTranslatedText = text => {
   return {
-    type: 'TRANSLATED_TEXT',
+    type: 'SHOW_TRANSLATED_TEXT',
     text
   };
+};
+
+const hideTranslatedText = () => {
+  return { type: 'HIDE_TRANSLATED_TEXT' };
 };
 
 actions.translate = (key, text) => {
@@ -75,7 +79,12 @@ actions.translate = (key, text) => {
     return dispatch => {
       fetch(url)
         .then(resp => resp.ok ? resp.json() : resp.statusText)
-        .then(json => dispatch(translatedText(json.data.translations[0].translatedText)))
+        .then(json => dispatch(showTranslatedText(json.data.translations[0].translatedText)))
+        .then(() => {
+          setTimeout(() => {
+            dispatch(hideTranslatedText())
+          }, 5000)
+        })
         .catch(console.warn);
     };
 }
