@@ -23,21 +23,6 @@ actions.updateGoogleTranslateApiKey = key => {
   };
 };
 
-actions.letterMatch = letter => {
-  return {
-    type: 'LETTER_MATCH',
-    letter
-  };
-};
-
-actions.say = (text, lang) => {
-  return {
-    type: 'SAY',
-    text,
-    lang
-  };
-};
-
 const sampleLoaded = sample => {
   return {
     type: 'SAMPLE_LOADED',
@@ -74,8 +59,8 @@ actions.loadSampleFrom = url => {
 };
 
 actions.loadDefaultSample = () => {
-  return actions.loadSampleFrom('https://pl.wikipedia.org/wiki/Specjalna:Losowa_strona');
-  //return actions.loadSampleFrom('http://literat.ug.edu.pl/~literat/hsnowel/003.htm');
+  //return actions.loadSampleFrom('https://pl.wikipedia.org/wiki/Specjalna:Losowa_strona');
+  return actions.loadSampleFrom('http://literat.ug.edu.pl/~literat/hsnowel/003.htm');
 };
 
 const sayTranslatedText = text => {
@@ -101,37 +86,6 @@ actions.translate = (key, text) => {
       .then(() => dispatch(clearTranslatedText()))
       .catch(console.warn);
   };
-};
-
-const keypress = event => {
-  return {
-    type: 'KEY_PRESS',
-    key: event.key,
-    code: event.code
-  };
-};
-
-actions.listenToKeypress = () => {
-  return dispatch => {
-    window.addEventListener('keypress', keypress);
-    return { cancel: () => window.removeEventListener('keypress', keypress) };
-  };
-};
-
-function timerCursorBlink(dispatch, isCancelled) {
-		if (!isCancelled()) {
-  		dispatch({ type: 'CURSOR_BLINK' });
-  		setTimeout(this.timerCursorBlink(dispatch), 700);
-		}
 }
-
-actions.startCursorBlink = () => {
-  let cancel = false;
-
-  return dispatch => {
-    timerCursorBlink(dispatch, () => cancel);
-    return { cancel: () => cancel = true };
-  }
-};
 
 export default actions;
