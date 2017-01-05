@@ -1,5 +1,28 @@
 class actions {}
 
+actions.showConfig = () => {
+  return { type: 'SHOW_CONFIG' };
+};
+
+actions.hideConfig = () => {
+  return { type: 'HIDE_CONFIG' };
+};
+
+actions.cursorForward = () => {
+  return { type: 'CURSOR_FORWARD' };
+};
+
+actions.cursorBackward = () => {
+  return { type: 'CURSOR_BACKWARD' };
+};
+
+actions.updateGoogleTranslateApiKey = key => {
+  return {
+    type: 'UPDATE_GOOGLE_TRANSLATE_API_KEY',
+    key
+  };
+};
+
 const sampleLoaded = sample => {
   return {
     type: 'SAMPLE_LOADED',
@@ -8,9 +31,6 @@ const sampleLoaded = sample => {
 };
 
 actions.loadSampleFrom = url => {
-  const encodedUrl = encodeURIComponent(url);
-  const yql = `https://query.yahooapis.com/v1/public/yql?q=select * from html where url="${encodedUrl}"&format=html`;
-
   const extractContent = html => {
     const div = document.createElement('div');
     div.innerHTML = html;
@@ -20,12 +40,15 @@ actions.loadSampleFrom = url => {
     let text = '';
     let item = results.iterateNext();
     while (item) {
-      text = text + item.textContent;
+      text = `${text}${item.textContent} `;
       item = results.iterateNext();
-    }  
+    }
 
-    return text;
-  }
+    return text.split('');
+  };
+  
+  const encodedUrl = encodeURIComponent(url);
+  const yql = `https://query.yahooapis.com/v1/public/yql?q=select * from html where url="${encodedUrl}"&format=html`;
 
   return dispatch => {
     fetch(yql)
@@ -36,7 +59,33 @@ actions.loadSampleFrom = url => {
 };
 
 actions.loadDefaultSample = () => {
-  return actions.loadSampleFrom('https://pl.wikipedia.org/wiki/Specjalna:Losowa_strona');
+  //return actions.loadSampleFrom('https://pl.wikipedia.org/wiki/Specjalna:Losowa_strona');
+  return actions.loadSampleFrom('http://literat.ug.edu.pl/~literat/hsnowel/003.htm');
 };
+
+const sayTranslatedText = text => {
+  return {
+    type: 'SAY_TRANSLATED_TEXT',
+    text
+  };
+};
+
+const clearTranslatedText = () => {
+  return { type: 'CLEAR_TRANSLATED_TEXT' };
+};
+
+actions.translate = (key, text) => {
+  const url = `https://translation.googleapis.com/language/translate/v2?key=${key}&source=pl&target=en&q=${encodeURIComponent(text)}`;
+  
+  return dispatch => {
+    const delayHideTranslatedText = () => setTimeout(() => dispatch(hideTranslatedText()), 5000);
+  
+    fetch(url)
+      .then(resp => resp.ok ? resp.json() : resp.statusText)
+      .then(json => dispatch(sayTranslatedText(json.data.translations[0].translatedText)))
+      .then(() => dispatch(clearTranslatedText()))
+      .catch(console.warn);
+  };
+}
 
 export default actions;

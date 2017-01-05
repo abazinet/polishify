@@ -4,162 +4,154 @@ import { bindActionCreators } from 'Redux';
 import store from 'store';
 import * as actions from 'actions';
 
-const range = length => [...Array(length).keys()];
+const connectAll = Component => connect(
+  state => state.toJS(),
+  dispatch => bindActionCreators(actions, dispatch)
+)(Component);
 
 const polishMap = {
   'a': 'aą', 'b': 'b', 'c': 'cć', 'd': 'd', 'e': 'eę', 'f': 'f', 'g': 'g', 'h': 'h', 'i': 'i', 'j': 'j', 'k': 'k', 'l': 'lł',
-  'm': 'm', 'n': 'nń', 'o': 'oó', 'p': 'p', 'r': 'r', 's': 'sś', 't': 't', 'u': 'u', 'w': 'w', 'y': 'y', 'z': 'zźż', ' ': ' '
+  'm': 'm', 'n': 'nń', 'o': 'oó', 'p': 'p', 'r': 'r', 's': 'sś', 't': 't', 'u': 'u', 'w': 'w', 'y': 'y', 'z': 'zźż', ' ': ' ',
+  '0': '0', '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9'
 };
 
 const polishAll = Object.values(polishMap).join('');
 
-class TextReader {
-  constructor(text) {
-    this.text = Array.isArray(text) ? text : text.split('');
-    this.position = -1;
+const cachedLettersAudio = polishAll.trim().split('').map(letter => {
+  const audio = new Audio(`https://cdn.gomix.com/c41eeb90-b28a-4268-8f0f-37503b86c52e%2F${encodeURIComponent(letter)}.mp3`);
+  audio.preload = 'auto';
+  return { letter, audio };
+});
+
+class Config extends React.Component {
+  onApiKeyChange(event) {
+    this.props.updateGoogleTranslateApiKey(event.target.value);
   }
 
-  nextChunk(length) {
-    return range(length).map(() => this.next());
-  }
-
-  previousChunk(length) {
-    return range(length).map(() => this.previous()).reverse();
-  }
-
-  next() {
-    this.position++;
-    if (this.position === this.text.length) {
-      this.position = 0;
-    }
-
-    return this.text[this.position];
-  }
-
-  previous() {
-    this.position--;
-    if (this.position === -1) {
-      this.position = this.text.length - 1;
-    }
-
-    return this.text[this.position];
-  }
-  
-  currentPosition() {
-    return this.position;
-  }
-  
-  currentLetter(position) {
-    return this.text[position];
+  render() {
+    return (
+      <div>
+        <input
+          type="text"
+          value={ this.props.config.googleTranslateApiKey }
+          placeholder="google translate api key"
+          onChange={ this.onApiKeyChange.bind(this) }>
+        </input>
+        <button onClick={ this.props.hideConfig }>close</button>
+      </div>
+    );
   }
 }
+
+const ConnectedConfig = connectAll(Config);
 
 class TextSample extends React.Component {
   constructor(props) {
     super(props);
-    this.text = new TextReader(props.text);
-    this.lettersInRow = 20;
-    this.rowsInText = 3;
-    this.maxLetters = this.lettersInRow * this.rowsInText;
     this.word = [];
 
     this.state = {
-      blinking: false,
-      sample: new TextReader(this.text.nextChunk(this.maxLetters)),
-      cursorPosition: 0
+      blinking: false
     };
   }
-  
-  componentWillReceiveProps(newProps) {
-    if (this.props.text !== newProps.text) {
-      this.text = new TextReader(newProps.text);
-      this.word = [];
-      this.setState({
-        sample: new TextReader(this.text.nextChunk(this.maxLetters)),
-        cursorPosition: 0
-      });
-    }
-  }
 
-  playAudio(text) {
-    if (text) {
+  playAudio(text, lang) {
+    console.log(text);
+    if (text.length === 1 && text !== ' ' && polishAll.includes(text)) {
+      cachedLettersAudio.find(audio => audio.letter === text).audio.play();
+    } else {
       const synth = window.speechSynthesis;
       const speech = new SpeechSynthesisUtterance(text.trim());
-      speech.lang = 'pl-PL';
+      speech.lang = lang;
       synth.speak(speech);
     }
   }
 
   blink() {
 		this.setState({ blinking: !this.state.blinking });
-		setTimeout(this.blink.bind(this), 700);
+		this.timer = setTimeout(this.blink.bind(this), 700);
 	}
 
-  componentWillMount() {
+	componentWillMount() {
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
-  }
+		this.blink();
+	}
 
   componentWillUnmount() {
     window.removeEventListener('keydown', this.handleKeyDown);
   }
-  
+
+	componentWillUnmount() {
+	  clearTimeout(this.timer);
+	}
+	
   letterMatch(input, target) {
     const targets = polishMap[input.toLowerCase()];
     return targets ? targets.includes(target) : false;
   }
 
   handleKeyDown(event) {
-    const currentLetter = this.state.sample.currentLetter(this.state.cursorPosition).toLowerCase();
+    if (event.code === 'ArrowRight') {
+      this.props.cursorForward();
+      this.setState({ blinking: true });
+    }
+
+    if (event.code === 'ArrowLeft') {
+      this.props.cursorBackward();
+      this.setState({ blinking: true });
+    }
+
+    const currentLetter = this.props.content.sample[this.props.view.start + this.props.view.cursor].toLowerCase();
 
     if (!polishAll.includes(currentLetter) || this.letterMatch(event.key, currentLetter)) {
-      this.playAudio(currentLetter);
+      if (polishAll.includes(currentLetter)) this.playAudio(currentLetter);
       this.word.push(currentLetter);
   
       if (currentLetter === ' ') {
-        this.playAudio(this.word.join(''));
+        const text = this.word.join('');
+        this.playAudio(text, 'pl-PL');
+        this.props.translate(this.props.config.googleTranslateApiKey, text);
         this.word = [];
       }
-  
-      if (this.state.cursorPosition + 1 === this.maxLetters) {
-        this.setState({
-          cursorPosition: 0,
-          blinking: true,
-          sample: new TextReader(this.text.nextChunk(this.maxLetters))
-        });
-      } else {
-        this.setState({ cursorPosition: this.state.cursorPosition + 1, blinking: true });
-      }
+
+      this.props.cursorForward();
     }
   }
-
-	componentDidMount () {
-		this.blink();
-	}
-	
-  renderLetter(index, letter) {
-    const blinkingClass = (index === this.state.cursorPosition && this.state.blinking) ? 'blinking' : '';
-    const className = `letter one ${blinkingClass} ${index}`;
-
-    return <div key={ index } className={ className } onClick={ this.playAudio.bind(this, letter) }>{ letter }</div>;
+  
+  onDoubleClick() {
+    this.props.showConfig();
   }
 
-  renderRow() {
-    return range(this.lettersInRow).map(() => {
-      const sample = this.state.sample;
-      const letter = sample.next();
-      const position = sample.currentPosition();
+  renderLetter(letter, letterIndex) {
+    const blinkingClass = (letterIndex === this.props.view.cursor && this.state.blinking) ? 'blinking' : '';
+    const className = `letter one ${blinkingClass} ${letterIndex}`;
 
-      return this.renderLetter(position, letter)
-    });
+    return <div key={ letterIndex } className={ className } onClick={ this.playAudio.bind(this, letter) }>{ letter }</div>;
+  }
+
+  renderRow(row, rowIndex) {
+    const letters = row.map((letter, letterIndex) => this.renderLetter(letter, (rowIndex * this.props.config.columns) + letterIndex));
+    return <div key={ rowIndex } className="row">{ letters }</div>;
   }
 
   render() {
-    const rows = range(this.rowsInText).map((rowIndex) => <div key={ rowIndex } className="row">{ this.renderRow(this.state.sample) }</div>);
-    return <div>
-      { rows }
-    </div>;
+    if (this.props.config.visible) {
+      return <ConnectedConfig/>;
+    }
+
+    if (this.props.view.translation) {
+      this.playAudio(this.props.view.translation, 'en-US');
+    }
+
+    return (
+      <div onDoubleClick={this.onDoubleClick.bind(this)}>
+        { this.props.view.text.map(this.renderRow.bind(this)) }
+      </div>
+    );
   }
 }
+
+const ConnectedTextSample = connectAll(TextSample);
 
 class Keyboard extends React.Component {
   render() {
@@ -188,7 +180,7 @@ class Keyboard extends React.Component {
         <div className="row">
           { renderKey('ctrl', 'two') }
           { renderKey('alt', 'two') }
-          { renderKey('spacebar', 'five') }
+          { renderKey('space', 'five') }
           { renderKey('alt ', 'one-half') }
           { renderKey('ctrl ', 'one') }
           { renderKey('', 'two-half') }
@@ -209,21 +201,20 @@ class Container extends React.Component {
   }
 
   render() {
-    return <div className="container">
-      <TextSample text={ this.props.content.sample }/>
-      <Keyboard/>
-    </div>
+    return (
+      <div className="container">
+        <ConnectedTextSample />
+        <Keyboard />
+      </div>
+    );
   }
 }
 
-const App = connect(
-  state => state,
-  dispatch => bindActionCreators(actions, dispatch)
-)(Container);
+const ConnectedContainer = connectAll(Container);
 
 ReactDOM.render(
   <Provider store={ store }>
-    <App/>
+    <ConnectedContainer/>
   </Provider>,
   document.getElementById('app')
 );
