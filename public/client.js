@@ -32,7 +32,6 @@ class Config extends React.Component {
     return (
       <div>
         <input
-          type="text"
           value={ this.props.config.googleTranslateApiKey }
           placeholder="google translate api key"
           onChange={ this.onApiKeyChange.bind(this) }>
@@ -46,78 +45,18 @@ class Config extends React.Component {
 const ConnectedConfig = connectAll(Config);
 
 class TextSample extends React.Component {
-  constructor(props) {
-    super(props);
-    this.word = [];
-
-    this.state = {
-      blinking: false
-    };
-  }
-
   playAudio(text, lang) {
     console.log(text);
-    if (text.length === 1 && text !== ' ' && polishAll.includes(text)) {
+    if (lang === 'pl-PL' && text.length === 1 && polishAll.trim().includes(text)) {
       cachedLettersAudio.find(audio => audio.letter === text).audio.play();
-    } else {
+    } else if (text.trim().length > 0) {
       const synth = window.speechSynthesis;
-      const speech = new SpeechSynthesisUtterance(text.trim());
+      const speech = new SpeechSynthesisUtterance(text);
       speech.lang = lang;
       synth.speak(speech);
     }
   }
 
-  blink() {
-		this.setState({ blinking: !this.state.blinking });
-		this.timer = setTimeout(this.blink.bind(this), 700);
-	}
-
-	componentWillMount() {
-    window.addEventListener('keydown', this.handleKeyDown.bind(this));
-		this.blink();
-	}
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleKeyDown);
-  }
-
-	componentWillUnmount() {
-	  clearTimeout(this.timer);
-	}
-	
-  letterMatch(input, target) {
-    const targets = polishMap[input.toLowerCase()];
-    return targets ? targets.includes(target) : false;
-  }
-
-  handleKeyDown(event) {
-    if (event.code === 'ArrowRight') {
-      this.props.cursorForward();
-      this.setState({ blinking: true });
-    }
-
-    if (event.code === 'ArrowLeft') {
-      this.props.cursorBackward();
-      this.setState({ blinking: true });
-    }
-
-    const currentLetter = this.props.content.sample[this.props.view.start + this.props.view.cursor].toLowerCase();
-
-    if (!polishAll.includes(currentLetter) || this.letterMatch(event.key, currentLetter)) {
-      if (polishAll.includes(currentLetter)) this.playAudio(currentLetter);
-      this.word.push(currentLetter);
-  
-      if (currentLetter === ' ') {
-        const text = this.word.join('');
-        this.playAudio(text, 'pl-PL');
-        this.props.translate(this.props.config.googleTranslateApiKey, text);
-        this.word = [];
-      }
-
-      this.props.cursorForward();
-    }
-  }
-  
   onDoubleClick() {
     this.props.showConfig();
   }
@@ -135,12 +74,8 @@ class TextSample extends React.Component {
   }
 
   render() {
-    if (this.props.config.visible) {
-      return <ConnectedConfig/>;
-    }
-
-    if (this.props.view.translation) {
-      this.playAudio(this.props.view.translation, 'en-US');
+    if (this.props.view.say.text) {
+      this.playAudio(this.props.view.say.text, this.props.view.say.lang);
     }
 
     return (
@@ -192,15 +127,29 @@ class Keyboard extends React.Component {
 
 // Main component
 class Container extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-  
+  componentWillMount() {
+	  this.keypressListener = this.props.listenToKeypress();
+		this.cursorBlinking = this.props.startCursorBlink();
+	}
+
+	componentWillUnmount() {
+	  this.keypressListener.cancel();
+	  this.cursorBlinking.cancel();
+	}
+
   componentDidMount() {
     this.props.loadDefaultSample();
   }
 
   render() {
+    if (this.props.config.visible) {
+      return (
+        <div className="container">
+          <ConnectedConfig/>
+        </div>
+      );
+    }
+
     return (
       <div className="container">
         <ConnectedTextSample />
