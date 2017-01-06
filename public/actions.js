@@ -23,6 +23,13 @@ actions.updateGoogleTranslateApiKey = key => {
   };
 };
 
+actions.updateSampleUrl = url => {
+  return {
+    type: 'SAMPLE_URL_CHANGED',
+    url
+  };
+};
+
 const sampleLoaded = sample => {
   return {
     type: 'SAMPLE_LOADED',
@@ -53,14 +60,9 @@ actions.loadSampleFrom = url => {
   return dispatch => {
     fetch(yql)
       .then(resp => resp.ok ? resp.text() : resp.statusText)
-      .then(html => dispatch(sampleLoaded(extractContent(html))))
+      .then(html => dispatch(sampleLoaded(extractContent(html), url)))
       .catch(console.warn);
   };
-};
-
-actions.loadDefaultSample = () => {
-  //return actions.loadSampleFrom('https://pl.wikipedia.org/wiki/Specjalna:Losowa_strona');
-  return actions.loadSampleFrom('http://literat.ug.edu.pl/~literat/hsnowel/003.htm');
 };
 
 const sayTranslatedText = text => {

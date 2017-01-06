@@ -4,11 +4,6 @@
   max-width: 1000px;
 }
 
-.keyboard {
-  padding-top: 50px;
-  margin: 10px;
-}
-
 .row {
   display: flex;
   margin:0 auto 5px;
@@ -21,12 +16,6 @@
   margin:0 5px 0 0; 
   text-align: center;
   cursor: pointer;
-}
-
-.box:active {
-  transform: translateY(1px);
-  background: #333;
-  box-shadow: 0 1px 0 #000;
 }
 
 .letter {
@@ -47,3 +36,8 @@
 .two-half { flex: 2.5; }
 .three { flex: 3; }
 .five { flex: 5; }
+
+.config {
+  display: flex;
+  flex-direction: column;
+}

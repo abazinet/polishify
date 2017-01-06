@@ -15,9 +15,9 @@ const polishMap = {
   '0': '0', '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9'
 };
 
-const polishAll = Object.values(polishMap).join('');
+const polishAll = Object.values(polishMap).join('').trim();
 
-const cachedLettersAudio = polishAll.trim().split('').map(letter => {
+const cachedLettersAudio = polishAll.split('').map(letter => {
   const audio = new Audio(`https://cdn.gomix.com/c41eeb90-b28a-4268-8f0f-37503b86c52e%2F${encodeURIComponent(letter)}.mp3`);
   audio.preload = 'auto';
   return { letter, audio };
@@ -27,17 +27,30 @@ class Config extends React.Component {
   onApiKeyChange(event) {
     this.props.updateGoogleTranslateApiKey(event.target.value);
   }
+  
+  onSampleUrlChanged(event) {
+    this.props.updateSampleUrl(event.target.value);
+  }
+  
+  onClose() {
+    this.props.hideConfig();
+    this.props.loadSampleFrom(this.props.config.sampleUrl);
+  }
 
   render() {
     return (
-      <div>
+      <div className="config">
         <input
-          type="text"
           value={ this.props.config.googleTranslateApiKey }
           placeholder="google translate api key"
           onChange={ this.onApiKeyChange.bind(this) }>
         </input>
-        <button onClick={ this.props.hideConfig }>close</button>
+        <input
+          value={ this.props.config.sampleUrl }
+          placeholder="url for content source"
+          onChange={ this.onSampleUrlChanged.bind(this) }>
+        </input>
+        <button onClick={ this.onClose.bind(this) }>close</button>
       </div>
     );
   }
@@ -56,8 +69,7 @@ class TextSample extends React.Component {
   }
 
   playAudio(text, lang) {
-    console.log(text);
-    if (text.length === 1 && text !== ' ' && polishAll.includes(text)) {
+    if (lang === 'pl-PL' && text.length === 1 && polishAll.includes(text)) {
       cachedLettersAudio.find(audio => audio.letter === text).audio.play();
     } else {
       const synth = window.speechSynthesis;
@@ -101,21 +113,27 @@ class TextSample extends React.Component {
       this.setState({ blinking: true });
     }
 
-    const currentLetter = this.props.content.sample[this.props.view.start + this.props.view.cursor].toLowerCase();
+    const currentLetter = this.props.view.currentLetter.toLowerCase();
 
     if (!polishAll.includes(currentLetter) || this.letterMatch(event.key, currentLetter)) {
-      if (polishAll.includes(currentLetter)) this.playAudio(currentLetter);
-      this.word.push(currentLetter);
-  
-      if (currentLetter === ' ') {
-        const text = this.word.join('');
-        this.playAudio(text, 'pl-PL');
-        this.props.translate(this.props.config.googleTranslateApiKey, text);
-        this.word = [];
-      }
-
-      this.props.cursorForward();
+      this.cursorForward(currentLetter);
     }
+  }
+  
+  cursorForward(currentLetter) {
+    if (polishAll.includes(currentLetter)) {
+      this.playAudio(currentLetter, 'pl-PL');
+      this.word.push(currentLetter);
+    }
+
+    if (currentLetter === ' ') {
+      const text = this.word.join('');
+      this.playAudio(text, 'pl-PL');
+      this.props.translate(this.props.config.googleTranslateApiKey, text);
+      this.word = [];
+    }
+
+    this.props.cursorForward();
   }
   
   onDoubleClick() {
@@ -123,10 +141,13 @@ class TextSample extends React.Component {
   }
 
   renderLetter(letter, letterIndex) {
-    const blinkingClass = (letterIndex === this.props.view.cursor && this.state.blinking) ? 'blinking' : '';
+    const cursorLetter = letterIndex === this.props.view.cursor;
+    const blinkingClass = (cursorLetter && this.state.blinking) ? 'blinking' : '';
     const className = `letter one ${blinkingClass} ${letterIndex}`;
 
-    return <div key={ letterIndex } className={ className } onClick={ this.playAudio.bind(this, letter) }>{ letter }</div>;
+    const onClick = cursorLetter ? this.cursorForward.bind(this, letter.toLowerCase()) : () => null;
+
+    return <div key={ letterIndex } className={ className } onClick={ onClick }>{ letter }</div>;
   }
 
   renderRow(row, rowIndex) {
@@ -153,43 +174,6 @@ class TextSample extends React.Component {
 
 const ConnectedTextSample = connectAll(TextSample);
 
-class Keyboard extends React.Component {
-  render() {
-    const renderKey = (letter, size) => <div key={ letter} className={`box ${size}`}>{ letter }</div>;
-
-    return (
-      <div className="keyboard">
-        <div className="row">
-          { ['~', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='].map(l => renderKey(l, 'one')) }
-          { renderKey('backspace', 'two') }
-        </div>
-        <div className="row">
-          { renderKey('tab', 'one-half') }
-          { ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\\'].map(l => renderKey(l, 'one')) }
-        </div>
-        <div className="row">
-          { renderKey('capslock', 'one-half') }
-          { ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\''].map(l => renderKey(l, 'one')) }
-          { renderKey('enter', 'two') }
-        </div>
-        <div className="row">
-          { renderKey('shift', 'two-half') }
-          { ['z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/'].map(l => renderKey(l, 'one')) }
-          { renderKey('shift ', 'two-half') }
-        </div>
-        <div className="row">
-          { renderKey('ctrl', 'two') }
-          { renderKey('alt', 'two') }
-          { renderKey('space', 'five') }
-          { renderKey('alt ', 'one-half') }
-          { renderKey('ctrl ', 'one') }
-          { renderKey('', 'two-half') }
-        </div>
-      </div>
-    );
-  }
-}
-
 // Main component
 class Container extends React.Component {
   constructor(props) {
@@ -197,14 +181,13 @@ class Container extends React.Component {
   }
   
   componentDidMount() {
-    this.props.loadDefaultSample();
+    this.props.loadSampleFrom(this.props.config.sampleUrl);
   }
 
   render() {
     return (
       <div className="container">
         <ConnectedTextSample />
-        <Keyboard />
       </div>
     );
   }

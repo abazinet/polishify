@@ -1,7 +1,7 @@
 import Immutable from 'Immutable';
 
 const COLUMNS = 30;
-const ROWS = 4;
+const ROWS = 10;
 const LENGTH = COLUMNS * ROWS;
 
 const defaultState = Immutable.fromJS({
@@ -10,16 +10,18 @@ const defaultState = Immutable.fromJS({
     columns: COLUMNS,
     rows: ROWS,
     textLength: LENGTH,
-    googleTranslateApiKey: ''
+    googleTranslateApiKey: localStorage.getItem('googleTranslateApiKey') || '',
+    sampleUrl: 'http://literat.ug.edu.pl/~literat/hsnowel/003.htm'
   },
   content: {
-    sample: null
+    sample: []
   },
   view: {
     text: [['l', 'o', 'a', 'd', 'i', 'n', 'g', '.', '.', '.']],
     translation: null,
     start: 0,
-    cursor: 0
+    cursor: 0,
+    currentLetter: 'l'
   }
 });
 
@@ -39,6 +41,12 @@ export default function reducer(state = defaultState, action) {
     mutate.setIn(['view', 'text'], text);
   };
 
+  const updateCurrentLetter = mutate => {
+    const sample = mutate.getIn(['content', 'sample']);
+    const currentIndex = (mutate.getIn(['view', 'start']) + mutate.getIn(['view', 'cursor'])) % sample.length;
+    mutate.setIn(['view', 'currentLetter'], sample[currentIndex]);
+  };
+
   switch(action.type) {
 
     case 'SAMPLE_LOADED':
@@ -51,6 +59,7 @@ export default function reducer(state = defaultState, action) {
         mutate.setIn(['view', 'start'], 0);
         mutate.setIn(['view', 'cursor'], 0);
 
+        updateCurrentLetter(mutate);
         updateViewText(mutate, action.sample, 0);
       });
 
@@ -58,6 +67,7 @@ export default function reducer(state = defaultState, action) {
       return state.withMutations(mutate => {
         const newCursor = mutate.getIn(['view', 'cursor']) + 1;
         mutate.setIn(['view', 'cursor'], newCursor);
+        updateCurrentLetter(mutate);
 
         if (newCursor === LENGTH) {
           const sample = mutate.getIn(['content', 'sample']);
@@ -66,6 +76,7 @@ export default function reducer(state = defaultState, action) {
           mutate.setIn(['view', 'start'], newStart);
           mutate.setIn(['view', 'cursor'], 0);
 
+          updateCurrentLetter(mutate);
           updateViewText(mutate, sample, newStart);
         }
       });
@@ -74,6 +85,7 @@ export default function reducer(state = defaultState, action) {
       return state.withMutations(mutate => {
         const newCursor = mutate.getIn(['view', 'cursor']) - 1;
         mutate.setIn(['view', 'cursor'], newCursor)
+        updateCurrentLetter(mutate);
 
         if (newCursor < 0) {
           const sample = mutate.getIn(['content', 'sample']);
@@ -83,6 +95,7 @@ export default function reducer(state = defaultState, action) {
           mutate.setIn(['view', 'start'], newStart);
           mutate.setIn(['view', 'cursor'], LENGTH - 1);
 
+          updateCurrentLetter(mutate);
           updateViewText(mutate, sample, newStart);
         }
       });
@@ -94,6 +107,7 @@ export default function reducer(state = defaultState, action) {
       return state.setIn(['config', 'visible'], false);
 
     case 'UPDATE_GOOGLE_TRANSLATE_API_KEY':
+      localStorage.setItem('googleTranslateApiKey', action.key);
       return state.setIn(['config', 'googleTranslateApiKey'], action.key);
 
     case 'SAY_TRANSLATED_TEXT':
@@ -101,6 +115,9 @@ export default function reducer(state = defaultState, action) {
 
     case 'CLEAR_TRANSLATED_TEXT':
       return state.setIn(['view', 'translation'], null);
+      
+    case 'SAMPLE_URL_CHANGED':
+      return state.setIn(['config', 'sampleUrl'], action.url);
 
     default:
       return state;
