@@ -50,6 +50,9 @@ actions.loadSampleFrom = url => {
       text = `${text}${item.textContent} `;
       item = results.iterateNext();
     }
+    
+    text = text.replace(/[\s\xA0]+/g, ' ');
+    text = text.replace(/\r?\n|\r/g, ' ');
 
     return text.split('');
   };

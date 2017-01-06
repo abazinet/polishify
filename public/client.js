@@ -106,27 +106,32 @@ class TextSample extends React.Component {
     if (event.code === 'ArrowRight') {
       this.props.cursorForward();
       this.setState({ blinking: true });
+      return;
     }
 
     if (event.code === 'ArrowLeft') {
       this.props.cursorBackward();
       this.setState({ blinking: true });
+      return;
     }
 
-    const currentLetter = this.props.view.currentLetter.toLowerCase();
+    const currentLetter = this.props.view.currentLetter;
 
     if (!polishAll.includes(currentLetter) || this.letterMatch(event.key, currentLetter)) {
-      this.cursorForward(currentLetter);
+      this.cursorForward();
     }
   }
-  
-  cursorForward(currentLetter) {
+
+  cursorForward() {
+    const currentLetter = this.props.view.currentLetter;
+    const nextLetter = this.props.view.nextLetter;
+
     if (polishAll.includes(currentLetter)) {
       this.playAudio(currentLetter, 'pl-PL');
       this.word.push(currentLetter);
     }
 
-    if (currentLetter === ' ') {
+    if (!polishAll.includes(nextLetter)) {
       const text = this.word.join('');
       this.playAudio(text, 'pl-PL');
       this.props.translate(this.props.config.googleTranslateApiKey, text);
@@ -145,7 +150,7 @@ class TextSample extends React.Component {
     const blinkingClass = (cursorLetter && this.state.blinking) ? 'blinking' : '';
     const className = `letter one ${blinkingClass} ${letterIndex}`;
 
-    const onClick = cursorLetter ? this.cursorForward.bind(this, letter.toLowerCase()) : () => null;
+    const onClick = cursorLetter ? this.cursorForward.bind(this) : () => null;
 
     return <div key={ letterIndex } className={ className } onClick={ onClick }>{ letter }</div>;
   }

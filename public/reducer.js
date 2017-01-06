@@ -10,8 +10,8 @@ const defaultState = Immutable.fromJS({
     columns: COLUMNS,
     rows: ROWS,
     textLength: LENGTH,
-    googleTranslateApiKey: localStorage.getItem('googleTranslateApiKey') || '',
-    sampleUrl: 'http://literat.ug.edu.pl/~literat/hsnowel/003.htm'
+    googleTranslateApiKey: localStorage.getItem('polishify.googleTranslateApiKey') || '',
+    sampleUrl: localStorage.getItem('polishify.sampleUrl') || 'http://literat.ug.edu.pl/~literat/hsnowel/003.htm'
   },
   content: {
     sample: []
@@ -21,7 +21,8 @@ const defaultState = Immutable.fromJS({
     translation: null,
     start: 0,
     cursor: 0,
-    currentLetter: 'l'
+    currentLetter: 'l',
+    nextLetter: 'o'
   }
 });
 
@@ -44,7 +45,10 @@ export default function reducer(state = defaultState, action) {
   const updateCurrentLetter = mutate => {
     const sample = mutate.getIn(['content', 'sample']);
     const currentIndex = (mutate.getIn(['view', 'start']) + mutate.getIn(['view', 'cursor'])) % sample.length;
-    mutate.setIn(['view', 'currentLetter'], sample[currentIndex]);
+    const nextIndex = (currentIndex + 1) % sample.length;
+
+    mutate.setIn(['view', 'currentLetter'], sample[currentIndex].toLowerCase());
+    mutate.setIn(['view', 'nextLetter'], sample[nextIndex].toLowerCase());
   };
 
   switch(action.type) {
@@ -107,7 +111,7 @@ export default function reducer(state = defaultState, action) {
       return state.setIn(['config', 'visible'], false);
 
     case 'UPDATE_GOOGLE_TRANSLATE_API_KEY':
-      localStorage.setItem('googleTranslateApiKey', action.key);
+      localStorage.setItem('polishify.googleTranslateApiKey', action.key);
       return state.setIn(['config', 'googleTranslateApiKey'], action.key);
 
     case 'SAY_TRANSLATED_TEXT':
@@ -117,6 +121,7 @@ export default function reducer(state = defaultState, action) {
       return state.setIn(['view', 'translation'], null);
       
     case 'SAMPLE_URL_CHANGED':
+      localStorage.setItem('polishify.sampleUrl', action.url);
       return state.setIn(['config', 'sampleUrl'], action.url);
 
     default:
