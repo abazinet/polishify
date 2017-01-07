@@ -16,6 +16,14 @@ actions.cursorBackward = () => {
   return { type: 'CURSOR_BACKWARD' };
 };
 
+actions.cursorDown = () => {
+  return { type: 'CURSOR_DOWN' };
+};
+
+actions.cursorUp = () => {
+  return { type: 'CURSOR_UP' };
+};
+
 actions.updateGoogleTranslateApiKey = key => {
   return {
     type: 'UPDATE_GOOGLE_TRANSLATE_API_KEY',

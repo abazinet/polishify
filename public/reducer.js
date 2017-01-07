@@ -50,6 +50,41 @@ export default function reducer(state = defaultState, action) {
     mutate.setIn(['view', 'currentLetter'], sample[currentIndex].toLowerCase());
     mutate.setIn(['view', 'nextLetter'], sample[nextIndex].toLowerCase());
   };
+  
+  const cursorForward = mutate => {
+    const newCursor = mutate.getIn(['view', 'cursor']) + 1;
+    mutate.setIn(['view', 'cursor'], newCursor);
+    updateCurrentLetter(mutate);
+
+    if (newCursor === LENGTH) {
+      const sample = mutate.getIn(['content', 'sample']);
+      const newStart = (mutate.getIn(['view', 'start']) + LENGTH) % sample.length;
+
+      mutate.setIn(['view', 'start'], newStart);
+      mutate.setIn(['view', 'cursor'], 0);
+
+      updateCurrentLetter(mutate);
+      updateViewText(mutate, sample, newStart);
+    }
+  };
+  
+  const cursorBackward = mutate => {
+    const newCursor = mutate.getIn(['view', 'cursor']) - 1;
+    mutate.setIn(['view', 'cursor'], newCursor)
+
+    if (newCursor < 0) {
+      const sample = mutate.getIn(['content', 'sample']);
+      const start = mutate.getIn(['view', 'start']);
+      const newStart = (start - LENGTH < 0) ? (sample.length - LENGTH) : (start - LENGTH);
+
+      mutate.setIn(['view', 'start'], newStart);
+      mutate.setIn(['view', 'cursor'], LENGTH - 1);
+
+      updateViewText(mutate, sample, newStart);
+    }
+    
+    updateCurrentLetter(mutate);
+  };
 
   switch(action.type) {
 
@@ -68,42 +103,21 @@ export default function reducer(state = defaultState, action) {
       });
 
     case 'CURSOR_FORWARD':
-      return state.withMutations(mutate => {
-        const newCursor = mutate.getIn(['view', 'cursor']) + 1;
-        mutate.setIn(['view', 'cursor'], newCursor);
-        updateCurrentLetter(mutate);
-
-        if (newCursor === LENGTH) {
-          const sample = mutate.getIn(['content', 'sample']);
-          const newStart = (mutate.getIn(['view', 'start']) + LENGTH) % sample.length;
-
-          mutate.setIn(['view', 'start'], newStart);
-          mutate.setIn(['view', 'cursor'], 0);
-
-          updateCurrentLetter(mutate);
-          updateViewText(mutate, sample, newStart);
-        }
-      });
+      return state.withMutations(cursorForward);
 
     case 'CURSOR_BACKWARD':
+      return state.withMutations(cursorBackward);
+
+    case 'CURSOR_UP':
       return state.withMutations(mutate => {
-        const newCursor = mutate.getIn(['view', 'cursor']) - 1;
-        mutate.setIn(['view', 'cursor'], newCursor)
-        updateCurrentLetter(mutate);
-
-        if (newCursor < 0) {
-          const sample = mutate.getIn(['content', 'sample']);
-          const start = mutate.getIn(['view', 'start']);
-          const newStart = (start - LENGTH < 0) ? (sample.length + start) : (start - LENGTH);
-
-          mutate.setIn(['view', 'start'], newStart);
-          mutate.setIn(['view', 'cursor'], LENGTH - 1);
-
-          updateCurrentLetter(mutate);
-          updateViewText(mutate, sample, newStart);
-        }
+        range(COLUMNS).forEach(() => cursorBackward(mutate));
       });
-    
+
+    case 'CURSOR_DOWN':
+      return state.withMutations(mutate => {
+        range(COLUMNS).forEach(() => cursorForward(mutate));
+      });
+
     case 'SHOW_CONFIG':
       return state.setIn(['config', 'visible'], true);
 

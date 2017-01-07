@@ -115,6 +115,18 @@ class TextSample extends React.Component {
       return;
     }
 
+    if (event.code === 'ArrowDown') {
+      this.props.cursorDown();
+      this.setState({ blinking: true });
+      return;
+    }
+
+    if (event.code === 'ArrowUp') {
+      this.props.cursorUp();
+      this.setState({ blinking: true });
+      return;
+    }
+
     const currentLetter = this.props.view.currentLetter;
 
     if (!polishAll.includes(currentLetter) || this.letterMatch(event.key, currentLetter)) {
